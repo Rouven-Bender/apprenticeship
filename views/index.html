@@ -5,13 +5,14 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="cdn/style.css" rel="stylesheet">
+		<script src="cdn/filter.js"></script>
 		<script src="cdn/htmx.min.js"></script>
 	</head>
 	<body>
 		<div id="header">
-			<input id="search" type="search" name="search" placeholder="Search">
+			<input id="search" onkeyup="filter()" type="search" placeholder="Search">
 			<label id="onlyActivLabel" for="onlyActiv">only activ</label>
-			<input type="checkbox" name="onlyActiv" checked>
+			<input id="onlyActiv" type="checkbox" onchange="filter()" name="onlyActiv" checked>
 			<button id="createNew">Create New</button>
 			<button id="logout" type="button">Logout</button>
 		</div>
