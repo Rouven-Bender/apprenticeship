@@ -4,6 +4,8 @@ From the Java Fullstack with an inhouse developed Java Framework (not written by
 As that is more interesting, I think
 # Dependencies
 - htmx @ 2.0.2 in the folder static as "htmx.min.js" (not vendor'd into the repo)
+- github.com/mattn/go-sqlite3
+    - needs gcc
 # The Project
 The License Server has a feature to register sublicenses (with limited number of seats) of a bigger License(maybe limited in total number of seats).
 But to configure that sublicense to be accepted by the big central License Server it needs to be written to that servers config

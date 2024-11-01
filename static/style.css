@@ -1,0 +1,43 @@
+body {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	grid-template-rows: repeat(7, 1fr);
+	grid-column-gap: 0px;
+	grid-row-gap: 0px;
+}
+
+#header {
+	grid-area: 1 / 1 / 2 / 8;
+	display: flex;
+	flex-direction: row;
+	height: fit-content;
+}
+
+#search {
+	width: 80%;
+	margin-left: 5px;
+}
+
+#onlyActivLabel {
+	margin-left: auto;
+}
+
+#createNew {
+	margin-left: auto;
+}
+
+#logout {
+	margin-right: 5px;
+	margin-left: auto;
+}
+
+#content {
+	grid-area: 2 / 1 / 8 / 8;
+}
+
+#data-table {
+	margin-right: auto;
+	margin-left: auto;
+	width: 80%;
+	text-align: center;
+}

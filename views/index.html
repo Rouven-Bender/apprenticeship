@@ -5,9 +5,44 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="cdn/style.css" rel="stylesheet">
+		<script src="cdn/htmx.min.js"></script>
 	</head>
 	<body>
-		Count {{ .Count }}
+		<div id="header">
+			<input id="search" type="search" name="search" placeholder="Search">
+			<label id="onlyActivLabel" for="onlyActiv">only activ</label>
+			<input type="checkbox" name="onlyActiv" checked>
+			<button id="createNew">Create New</button>
+			<button id="logout" type="button">Logout</button>
+		</div>
+		<div id="content" hx-get="/api/html/table" hx-swap="outerHTML" hx-trigger="load">
+		</div>
 	</body>
 </html>
+{{ end }}
+{{ block "table" .}}
+<div id="content">
+	<table id="data-table">
+		<tr>
+			<th>Id</th>
+			<th>Name</th>
+			<th>Number of Seats</th>
+			<th>License Key</th>
+			<th>Expiry Date</th>
+			<th>Activ</th>
+			<th>Edit Button</th>
+		</tr>
+	{{ range . }}
+		<tr>
+		<td>{{ .Id }}</td>
+		<td>{{ .Name }}</td>
+		<td>{{ .NumberOfSeats }}</td>
+		<td>{{ .LicenseKey }}</td>
+		<td>{{ .ExpiryDate }}</td>
+		<td>{{ .Activ }}</td>
+		<td><button>Edit</button></td>
+		</tr>
+	{{ end }}
+	</table>
+</div>
 {{ end }}
