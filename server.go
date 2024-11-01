@@ -51,7 +51,7 @@ func (s *APIServer) Run() {
 }
 
 func (s *APIServer) homepage(w http.ResponseWriter, r *http.Request) {
-	s.views.render(HOMEPAGE, "index", http.StatusOK, w, 0)
+	s.views.render(HOMEPAGE, "index", http.StatusOK, w, ALIAS)
 }
 
 func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
