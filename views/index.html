@@ -22,7 +22,7 @@
 </html>
 {{ end }}
 {{ block "table" .}}
-<div id="content">
+<div id="content" hx-on:htmx:load="filter()">
 	<table id="data-table">
 		<tr>
 			<th>Id</th>
