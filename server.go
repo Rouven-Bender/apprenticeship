@@ -5,22 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-)
-
-type APIServer struct {
-	listenAddr string
-	db         sqliteStore
-	views      Views
-}
-
-type Views struct {
-	pages []*template.Template
-}
-
-type page int
-
-const (
-	HOMEPAGE page = 0
+	"strconv"
 )
 
 func (v *Views) render(p page, block string, status int, w http.ResponseWriter, d interface{}) error {
@@ -41,6 +26,7 @@ func (s *APIServer) Run() {
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("GET /cdn/{filename}", http.StripPrefix("/cdn/", fs))
 	mux.Handle("GET /api/html/table", makeHTTPHandleFunc(s.table))
+	mux.Handle("GET /edit/{id}", makeHTTPHandleFunc(s.edit))
 	mux.Handle("GET /", makeHTTPHandleFunc(s.homepage))
 	//mux.Handle("GET /cdn/{filename}", makeHTTPHandleFunc(s.debugHandler))
 
@@ -62,6 +48,27 @@ func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
 	s.views.render(HOMEPAGE, "table", http.StatusOK, w, sublicenses)
 }
 
+func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	license, err := s.db.GetSublicense(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	scrnData := SublicenseScreen{
+		Alias: ALIAS,
+		Data:  *license,
+		Conversions: SublicenseConverions{
+			Date: UnixtimeToHTMLDateString(license.ExpiryDate),
+		},
+	}
+	s.views.render(SUBLICENSE, "sublicense-edit", http.StatusOK, w, scrnData)
+}
+
 func (s *APIServer) debugHandler(_ http.ResponseWriter, r *http.Request) {
 	reqDump, err := httputil.DumpRequest(r, true)
 	if err != nil {
@@ -69,8 +76,6 @@ func (s *APIServer) debugHandler(_ http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("REQUEST:\n%s", string(reqDump))
 }
-
-type apiFunc func(http.ResponseWriter, *http.Request)
 
 func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -80,11 +85,17 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 
 func loadTemplates() Views {
 	var out []*template.Template
-	tmpl, err := template.ParseFiles("views/index.html")
-	if err != nil {
-		panic(err)
+	var fileList []string = []string{
+		"views/index.html",
+		"views/sublicense.html",
 	}
-	out = append(out, tmpl)
+	for _, fileName := range fileList {
+		tmpl, err := template.ParseFiles(fileName)
+		if err != nil {
+			panic(err)
+		}
+		out = append(out, tmpl)
+	}
 	return Views{
 		pages: out,
 	}

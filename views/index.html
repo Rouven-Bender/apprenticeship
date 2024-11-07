@@ -12,7 +12,7 @@
 		<div id="header">
 			<input id="search" onkeyup="filter()" type="search" placeholder="Search">
 			<label id="onlyActivLabel" for="onlyActiv">only activ</label>
-			<input id="onlyActiv" type="checkbox" onchange="filter()" name="onlyActiv" checked>
+			<input id="onlyActiv" type="checkbox" onchange="filter()" name="onlyActiv">
 			<button id="createNew">Create New</button>
 			<button id="logout" type="button">Logout</button>
 		</div>
@@ -22,7 +22,7 @@
 </html>
 {{ end }}
 {{ block "table" .}}
-<div id="content" hx-on:htmx:load="filter()">
+<div id="content">
 	<table id="data-table">
 		<tr>
 			<th>Id</th>

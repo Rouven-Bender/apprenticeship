@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -9,6 +10,7 @@ import (
 type Storage interface {
 	scanIntoSublicenses(*sql.Rows) (*Sublicense, error)
 	GetAllSublicenses() ([]*Sublicense, error)
+	GetSublicense(id int) (*Sublicense, error)
 }
 
 type sqliteStore struct {
@@ -26,6 +28,17 @@ func NewSqliteStore() (*sqliteStore, error) {
 	return &sqliteStore{
 		db: db,
 	}, nil
+}
+
+func (s *sqliteStore) GetSublicense(id int) (*Sublicense, error) {
+	rows, err := s.db.Query("select * from sublicenses where id = ?", id)
+	if err != nil {
+		return nil, err
+	}
+	if rows.Next() {
+		return s.scanIntoSublicense(rows)
+	}
+	return nil, fmt.Errorf("sublicense %d not found", id)
 }
 
 func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
