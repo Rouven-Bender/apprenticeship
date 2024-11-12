@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"strconv"
+	"strings"
+	"time"
 )
 
 func (v *Views) render(p page, block string, status int, w http.ResponseWriter, d interface{}) error {
@@ -27,6 +30,9 @@ func (s *APIServer) Run() {
 	mux.Handle("GET /cdn/{filename}", http.StripPrefix("/cdn/", fs))
 	mux.Handle("GET /api/html/table", makeHTTPHandleFunc(s.table))
 	mux.Handle("GET /edit/{id}", makeHTTPHandleFunc(s.edit))
+	mux.Handle("PATCH /edit/{id}", makeHTTPHandleFunc(s.saveEdit))
+	mux.Handle("GET /create", makeHTTPHandleFunc(s.create))
+	mux.Handle("POST /create", makeHTTPHandleFunc(s.saveCreate))
 	mux.Handle("GET /", makeHTTPHandleFunc(s.homepage))
 	//mux.Handle("GET /cdn/{filename}", makeHTTPHandleFunc(s.debugHandler))
 
@@ -69,6 +75,65 @@ func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
 	s.views.render(SUBLICENSE, "sublicense-edit", http.StatusOK, w, scrnData)
 }
 
+func (s *APIServer) create(w http.ResponseWriter, r *http.Request) {
+	scrnData := SublicenseScreen{
+		Alias:       ALIAS,
+		Data:        Sublicense{},
+		Conversions: SublicenseConverions{},
+	}
+	s.views.render(SUBLICENSE, "sublicense-create", http.StatusOK, w, scrnData)
+}
+
+func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
+	fname := r.FormValue("fname")
+	if len(fname) > 255 || len(fname) == 0 {
+		InvaildRequest(w, r, "Name to long or empty")
+		return
+	}
+	seats := r.FormValue("fnumberOfSeats")
+	if len(seats) == 0 {
+		InvaildRequest(w, r, "Number of Seats empty")
+		return
+	}
+	numberofseats, err := strconv.Atoi(seats)
+	if err != nil && numberofseats > 0 {
+		InvaildRequest(w, r, "Number of Seats")
+		return
+	}
+	key := LicenseKey(r.FormValue("fLicenseKey"))
+	if !key.valid() {
+		InvaildRequest(w, r, "License Key invalid")
+		return
+	}
+	expiryDate, err := time.Parse(time.DateOnly, r.FormValue("fExpiryDate"))
+	if err != nil {
+		InvaildRequest(w, r, "Expiry Date")
+		return
+	}
+	activ := false
+	log.Println(r.FormValue("fActiv"))
+	if strings.ToUpper(r.FormValue("fActiv")) == "ON" {
+		activ = true
+	}
+	lic := Sublicense{
+		Id:            -1, // So I now that I have to ignore it when writing
+		Name:          fname,
+		NumberOfSeats: numberofseats,
+		LicenseKey:    string(key),
+		ExpiryDate:    expiryDate.Unix(),
+		Activ:         activ,
+	}
+	if err = s.db.CreateSublicense(&lic); err != nil {
+		log.Println(err)
+		InvaildRequest(w, r, "Saving Failed")
+		return
+	}
+}
+
 func (s *APIServer) debugHandler(_ http.ResponseWriter, r *http.Request) {
 	reqDump, err := httputil.DumpRequest(r, true)
 	if err != nil {
@@ -99,4 +164,8 @@ func loadTemplates() Views {
 	return Views{
 		pages: out,
 	}
+}
+
+func InvaildRequest(w http.ResponseWriter, r *http.Request, extraInfo string) {
+	http.Error(w, fmt.Sprintf("Error: %s", extraInfo), http.StatusBadRequest)
 }

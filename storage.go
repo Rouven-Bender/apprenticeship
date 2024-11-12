@@ -11,6 +11,7 @@ type Storage interface {
 	scanIntoSublicenses(*sql.Rows) (*Sublicense, error)
 	GetAllSublicenses() ([]*Sublicense, error)
 	GetSublicense(id int) (*Sublicense, error)
+	CreateSublicense(lic *Sublicense) error
 }
 
 type sqliteStore struct {
@@ -55,6 +56,27 @@ func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
 		slics = append(slics, lics)
 	}
 	return slics, nil
+}
+
+func (s *sqliteStore) CreateSublicense(lic *Sublicense) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	query := `insert into 
+	sublicenses (name, numberOfSeats, licenseKey, expiryDate, activ)
+	values (?, ?, ?, ?, ?)`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(lic.Name, lic.NumberOfSeats, lic.LicenseKey, lic.ExpiryDate, lic.Activ)
+	if err != nil {
+		return err
+	}
+	tx.Commit()
+	return nil
 }
 
 func (s *sqliteStore) scanIntoSublicense(rows *sql.Rows) (*Sublicense, error) {

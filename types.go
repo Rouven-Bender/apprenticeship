@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 type Sublicense struct {
@@ -30,6 +31,8 @@ type APIServer struct {
 	views      Views
 }
 
+type apiFunc func(http.ResponseWriter, *http.Request)
+
 type Views struct {
 	pages []*template.Template
 }
@@ -41,4 +44,12 @@ const (
 	SUBLICENSE page = 1
 )
 
-type apiFunc func(http.ResponseWriter, *http.Request)
+type LicenseKey string
+
+func (l *LicenseKey) valid() bool {
+	fields := strings.Split(string(*l), "-")
+	if len(fields) == 4 && len(fields[0]) == 4 && len(fields[1]) == 4 && len(fields[2]) == 4 && len(fields[3]) == 4 {
+		return true
+	}
+	return false
+}

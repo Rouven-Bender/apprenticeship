@@ -19,3 +19,9 @@
 	margin-left: 15px;
 	align-self: flex-start;
 }
+input#send {
+	margin-left: auto;
+}
+#error {
+	color: red;
+}
