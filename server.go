@@ -115,7 +115,6 @@ func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	activ := false
-	log.Println(r.FormValue("fActiv"))
 	if strings.ToUpper(r.FormValue("fActiv")) == "ON" {
 		activ = true
 	}

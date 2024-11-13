@@ -53,6 +53,7 @@ func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
 		if err != nil {
 			return nil, err
 		}
+		lics.Link = fmt.Sprintf("/edit/%d", lics.Id)
 		slics = append(slics, lics)
 	}
 	return slics, nil

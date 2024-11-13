@@ -13,7 +13,7 @@
 			<input id="search" onkeyup="filter()" type="search" placeholder="Search">
 			<label id="onlyActivLabel" for="onlyActiv">only activ</label>
 			<input id="onlyActiv" type="checkbox" onchange="filter()" name="onlyActiv">
-			<button id="createNew">Create New</button>
+			<button onclick="location.href = '/create'" id="createNew">Create New</button>
 			<button id="logout" type="button">Logout</button>
 		</div>
 		<div id="content" hx-get="/api/html/table" hx-swap="outerHTML" hx-trigger="load">
@@ -41,7 +41,7 @@
 		<td>{{ .LicenseKey }}</td>
 		<td>{{ .ExpiryDate }}</td>
 		<td>{{ .Activ }}</td>
-		<td><button>Edit</button></td>
+		<td><button onclick="location.href = {{.Link}}">Edit</button></td>
 		</tr>
 	{{ end }}
 	</table>

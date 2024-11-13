@@ -13,6 +13,7 @@ type Sublicense struct {
 	LicenseKey    string
 	ExpiryDate    int64
 	Activ         bool
+	Link          string
 }
 
 type SublicenseScreen struct {
