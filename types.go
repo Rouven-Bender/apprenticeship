@@ -6,24 +6,28 @@ import (
 	"strings"
 )
 
-type Sublicense struct {
+type SublicenseDB struct {
 	Id            int
 	Name          string
 	NumberOfSeats int
 	LicenseKey    string
 	ExpiryDate    int64
 	Activ         bool
-	Link          string
+}
+
+type Sublicense struct {
+	Id            int
+	Name          string
+	NumberOfSeats int
+	LicenseKey    string
+	ExpiryDate    string
+	Activ         bool
+	EditLink      string
 }
 
 type SublicenseScreen struct {
-	Alias       fileAlias
-	Data        Sublicense
-	Conversions SublicenseConverions
-}
-
-type SublicenseConverions struct {
-	Date string
+	Alias fileAlias
+	Data  Sublicense
 }
 
 type APIServer struct {

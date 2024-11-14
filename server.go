@@ -8,7 +8,6 @@ import (
 	"net/http/httputil"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func (v *Views) render(p page, block string, status int, w http.ResponseWriter, d interface{}) error {
@@ -68,18 +67,14 @@ func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
 	scrnData := SublicenseScreen{
 		Alias: ALIAS,
 		Data:  *license,
-		Conversions: SublicenseConverions{
-			Date: UnixtimeToHTMLDateString(license.ExpiryDate),
-		},
 	}
 	s.views.render(SUBLICENSE, "sublicense-edit", http.StatusOK, w, scrnData)
 }
 
 func (s *APIServer) create(w http.ResponseWriter, r *http.Request) {
 	scrnData := SublicenseScreen{
-		Alias:       ALIAS,
-		Data:        Sublicense{},
-		Conversions: SublicenseConverions{},
+		Alias: ALIAS,
+		Data:  Sublicense{},
 	}
 	s.views.render(SUBLICENSE, "sublicense-create", http.StatusOK, w, scrnData)
 }
@@ -109,21 +104,24 @@ func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
 		InvaildRequest(w, r, "License Key invalid")
 		return
 	}
-	expiryDate, err := time.Parse(time.DateOnly, r.FormValue("fExpiryDate"))
+	date, err := HTMLDateStringToUnixtime(r.FormValue("fExpiryDate"))
+	log.Println(date)
 	if err != nil {
 		InvaildRequest(w, r, "Expiry Date")
 		return
 	}
+	expiryDate := UnixtimeToHTMLDateString(date)
+	log.Println(expiryDate)
 	activ := false
 	if strings.ToUpper(r.FormValue("fActiv")) == "ON" {
 		activ = true
 	}
 	lic := Sublicense{
-		Id:            -1, // So I now that I have to ignore it when writing
+		Id:            -1, // So I know that I have to ignore it when writing
 		Name:          fname,
 		NumberOfSeats: numberofseats,
 		LicenseKey:    string(key),
-		ExpiryDate:    expiryDate.Unix(),
+		ExpiryDate:    expiryDate,
 		Activ:         activ,
 	}
 	if err = s.db.CreateSublicense(&lic); err != nil {

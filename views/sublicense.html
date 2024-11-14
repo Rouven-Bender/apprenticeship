@@ -21,7 +21,7 @@
 				<label for="fLicenseKey">License Key:</label>
 			<input type="text" name="fLicenseKey" value="{{ .Data.LicenseKey }}">
 				<label for="fExpiryDate">Expiry Date:</label>
-			<input type="date" name="fExpiryDate" value="{{ .Conversions.Date }}">
+			<input type="date" name="fExpiryDate" value="{{ .Data.ExpiryDate }}">
 				<label for="fActiv">Activ:</label>
 			{{ if .Data.Activ }}
 			<input id="activ" type="checkbox" name="fActiv" checked>
