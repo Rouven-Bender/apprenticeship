@@ -105,13 +105,11 @@ func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	date, err := HTMLDateStringToUnixtime(r.FormValue("fExpiryDate"))
-	log.Println(date)
 	if err != nil {
 		InvaildRequest(w, r, "Expiry Date")
 		return
 	}
 	expiryDate := UnixtimeToHTMLDateString(date)
-	log.Println(expiryDate)
 	activ := false
 	if strings.ToUpper(r.FormValue("fActiv")) == "ON" {
 		activ = true
