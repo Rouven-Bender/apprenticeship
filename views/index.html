@@ -32,9 +32,10 @@
 			<th>Expiry Date</th>
 			<th>Activ</th>
 			<th>Edit Button</th>
+			<th>Delete</th>
 		</tr>
 	{{ range . }}
-		<tr>
+		<tr id="tr_{{.Id}}">
 		<td>{{ .Id }}</td>
 		<td>{{ .Name }}</td>
 		<td>{{ .NumberOfSeats }}</td>
@@ -42,6 +43,7 @@
 		<td>{{ .ExpiryDate }}</td>
 		<td>{{ .Activ }}</td>
 		<td><button onclick="location.href = {{.EditLink}}">Edit</button></td>
+			<td><button hx-target="#tr_{{.Id}}" hx-swap="outerHTML" hx-delete="{{.DeleteLink}}">Delete</button></td>
 		</tr>
 	{{ end }}
 	</table>

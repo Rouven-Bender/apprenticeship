@@ -30,6 +30,7 @@ func (s *APIServer) Run() {
 	mux.Handle("GET /api/html/table", makeHTTPHandleFunc(s.table))
 	mux.Handle("GET /edit/{id}", makeHTTPHandleFunc(s.edit))
 	mux.Handle("PATCH /edit/{id}", makeHTTPHandleFunc(s.saveEdit))
+	mux.Handle("DELETE /delete/{id}", makeHTTPHandleFunc(s.delete))
 	mux.Handle("GET /create", makeHTTPHandleFunc(s.create))
 	mux.Handle("POST /create", makeHTTPHandleFunc(s.saveCreate))
 	mux.Handle("GET /", makeHTTPHandleFunc(s.homepage))
@@ -51,6 +52,17 @@ func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	s.views.render(HOMEPAGE, "table", http.StatusOK, w, sublicenses)
+}
+
+func (s *APIServer) delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		InvaildRequest(w, r, "Error with ID")
+	}
+	err = s.db.DeleteSublicenseById(id)
+	if err != nil {
+		InvaildRequest(w, r, fmt.Sprintf("Error Deleting: %s", err))
+	}
 }
 
 func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {

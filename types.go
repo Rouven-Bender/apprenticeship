@@ -23,6 +23,7 @@ type Sublicense struct {
 	ExpiryDate    string
 	Activ         bool
 	EditLink      string
+	DeleteLink    string
 }
 
 type SublicenseScreen struct {

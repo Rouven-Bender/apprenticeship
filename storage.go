@@ -12,6 +12,7 @@ type Storage interface {
 	GetAllSublicenses() ([]*Sublicense, error)
 	GetSublicense(id int) (*Sublicense, error)
 	CreateSublicense(lic *Sublicense) error
+	DeleteSublicense(lic *Sublicense) error
 }
 
 type sqliteStore struct {
@@ -88,6 +89,25 @@ func (s *sqliteStore) CreateSublicense(lic *Sublicense) error {
 	return nil
 }
 
+func (s *sqliteStore) DeleteSublicenseById(id int) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	query := `delete from sublicenses where id=?`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return nil
+	}
+	tx.Commit()
+	return nil
+}
+
 func (s *sqliteStore) convertFromDBRepresentation(lic *SublicenseDB) *Sublicense {
 	return &Sublicense{
 		Id:            lic.Id,
@@ -97,6 +117,7 @@ func (s *sqliteStore) convertFromDBRepresentation(lic *SublicenseDB) *Sublicense
 		ExpiryDate:    UnixtimeToHTMLDateString(lic.ExpiryDate),
 		Activ:         lic.Activ,
 		EditLink:      fmt.Sprintf("/edit/%d", lic.Id),
+		DeleteLink:    fmt.Sprintf("/delete/%d", lic.Id),
 	}
 }
 func (s *sqliteStore) convertToDBRepresentation(lic *Sublicense) (*SublicenseDB, error) {
