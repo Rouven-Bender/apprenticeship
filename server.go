@@ -57,7 +57,7 @@ func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		InvaildRequest(w, r, "Error with ID")
+		http.NotFound(w, r)
 	}
 	err = s.db.DeleteSublicenseById(id)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
 	}
 	license, err := s.db.GetSublicense(id)
 	if err != nil {
-		http.NotFound(w, r)
+		InvaildRequest(w, r, fmt.Sprintf("Getting the sublicense: %s", err))
 		return
 	}
 	scrnData := SublicenseScreen{
@@ -92,7 +92,54 @@ func (s *APIServer) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
-
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	fname := r.FormValue("fname")
+	if len(fname) > 255 || len(fname) == 0 {
+		InvaildRequest(w, r, "Name to long or empty")
+		return
+	}
+	seats := r.FormValue("fnumberOfSeats")
+	if len(seats) == 0 {
+		InvaildRequest(w, r, "Number of Seats empty")
+		return
+	}
+	numberofseats, err := strconv.Atoi(seats)
+	if err != nil && numberofseats > 0 {
+		InvaildRequest(w, r, "Number of Seats")
+		return
+	}
+	key := LicenseKey(r.FormValue("fLicenseKey"))
+	if !key.valid() {
+		InvaildRequest(w, r, "License Key invalid")
+		return
+	}
+	date, err := HTMLDateStringToUnixtime(r.FormValue("fExpiryDate"))
+	if err != nil {
+		InvaildRequest(w, r, "Expiry Date")
+		return
+	}
+	expiryDate := UnixtimeToHTMLDateString(date)
+	activ := false
+	if strings.ToUpper(r.FormValue("fActiv")) == "ON" {
+		activ = true
+	}
+	lic := &Sublicense{
+		Id:            id,
+		Name:          fname,
+		NumberOfSeats: numberofseats,
+		LicenseKey:    string(key),
+		ExpiryDate:    expiryDate,
+		Activ:         activ,
+	}
+	err = s.db.UpdateSublicense(lic)
+	if err != nil {
+		InvaildRequest(w, r, fmt.Sprintf("writing to DB: %s", err))
+		return
+	}
 }
 
 func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {

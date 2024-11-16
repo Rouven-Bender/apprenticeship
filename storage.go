@@ -13,6 +13,7 @@ type Storage interface {
 	GetSublicense(id int) (*Sublicense, error)
 	CreateSublicense(lic *Sublicense) error
 	DeleteSublicense(lic *Sublicense) error
+	UpdateSublicense(lic *Sublicense) error
 }
 
 type sqliteStore struct {
@@ -33,7 +34,13 @@ func NewSqliteStore() (*sqliteStore, error) {
 }
 
 func (s *sqliteStore) GetSublicense(id int) (*Sublicense, error) {
-	rows, err := s.db.Query("select * from sublicenses where id = ?", id)
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Commit()
+	query := `select * from sublicenses where id = ?`
+	rows, err := tx.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +55,13 @@ func (s *sqliteStore) GetSublicense(id int) (*Sublicense, error) {
 }
 
 func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
-	rows, err := s.db.Query("select * from sublicenses")
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Commit()
+	query := "select * from sublicenses"
+	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +86,7 @@ func (s *sqliteStore) CreateSublicense(lic *Sublicense) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Commit()
 	query := `insert into 
 	sublicenses (name, numberOfSeats, licenseKey, expiryDate, activ)
 	values (?, ?, ?, ?, ?)`
@@ -85,7 +99,6 @@ func (s *sqliteStore) CreateSublicense(lic *Sublicense) error {
 	if err != nil {
 		return err
 	}
-	tx.Commit()
 	return nil
 }
 
@@ -94,6 +107,7 @@ func (s *sqliteStore) DeleteSublicenseById(id int) error {
 	if err != nil {
 		return err
 	}
+	defer tx.Commit()
 	query := `delete from sublicenses where id=?`
 	stmt, err := tx.Prepare(query)
 	if err != nil {
@@ -102,9 +116,37 @@ func (s *sqliteStore) DeleteSublicenseById(id int) error {
 	defer stmt.Close()
 	_, err = stmt.Exec(id)
 	if err != nil {
-		return nil
+		return err
 	}
-	tx.Commit()
+	return nil
+}
+
+func (s *sqliteStore) UpdateSublicense(lic *Sublicense) error {
+	clic, err := s.convertToDBRepresentation(lic)
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Commit()
+	query := `update sublicenses set
+		name = ?,
+		numberOfSeats = ?,
+		licenseKey = ?,
+		expiryDate = ?,
+		activ = ?
+	where id = ? `
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(clic.Name, clic.NumberOfSeats, clic.LicenseKey, clic.ExpiryDate, clic.Activ, clic.Id)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

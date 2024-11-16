@@ -28,7 +28,7 @@
 			{{ else }}
 			<input id="activ" type="checkbox" name="fActiv">
 			{{ end }}
-			<input id="send" type="submit" value="Save">
+			<input hx-patch="/edit/{{ .Data.Id }}" id="send" type="submit" value="Save">
 			</div>
 		<p id="error"></p>
 		</form>
