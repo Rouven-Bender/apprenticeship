@@ -16,14 +16,14 @@ type SublicenseDB struct {
 }
 
 type Sublicense struct {
-	Id            int
-	Name          string
-	NumberOfSeats int
-	LicenseKey    string
-	ExpiryDate    string
-	Activ         bool
-	EditLink      string
-	DeleteLink    string
+	Id            int    `json:"-"`
+	Name          string `json:"name"`
+	NumberOfSeats int    `json:"number_of_seats"`
+	LicenseKey    string `json:"license_key"`
+	ExpiryDate    string `json:"expiry_date"`
+	Activ         bool   `json:"-"`
+	EditLink      string `json:"-"`
+	DeleteLink    string `json:"-"`
 }
 
 type SublicenseScreen struct {

@@ -10,6 +10,7 @@ import (
 type Storage interface {
 	scanIntoSublicenses(*sql.Rows) (*Sublicense, error)
 	GetAllSublicenses() ([]*Sublicense, error)
+	GetAllActivSublicenses() ([]*Sublicense, error)
 	GetSublicense(id int) (*Sublicense, error)
 	CreateSublicense(lic *Sublicense) error
 	DeleteSublicense(lic *Sublicense) error
@@ -61,6 +62,29 @@ func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
 	}
 	defer tx.Commit()
 	query := "select * from sublicenses"
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	slics := []*Sublicense{}
+	for rows.Next() {
+		lic, err := s.scanIntoSublicense(rows)
+		if err != nil {
+			return nil, err
+		}
+		clic := s.convertFromDBRepresentation(lic)
+		slics = append(slics, clic)
+	}
+	return slics, nil
+}
+
+func (s *sqliteStore) GetAllActivSublicenses() ([]*Sublicense, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Commit()
+	query := "select * from sublicenses where activ=true"
 	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
