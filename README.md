@@ -2,6 +2,10 @@
 This project is a parallel rewrite of my Apprenticeship final project
 From the Java Fullstack with an inhouse developed Java Framework (not written by me) to open source technologies
 As that is more interesting, I think
+# Usage
+This program uses subcommands for the features:
+    - "serve" - runs the server
+    - "export" - runs the export
 # Dependencies
 - htmx @ 2.0.2 in the folder static as "htmx.min.js" (not vendor'd into the repo)
 - github.com/mattn/go-sqlite3
