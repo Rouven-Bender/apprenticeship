@@ -15,7 +15,7 @@ func (v *Views) render(p page, block string, status int, w http.ResponseWriter, 
 	return v.pages[p].ExecuteTemplate(w, block, d)
 }
 
-func NewAPIServer(listenAddr string, database sqliteStore) *APIServer {
+func NewAPIServer(listenAddr string, database *sqliteStore) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
 		db:         database,
@@ -49,7 +49,7 @@ func (s *APIServer) homepage(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
 	sublicenses, err := s.db.GetAllSublicenses()
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		InternalError(w, "Getting sublicenses failed")
 	}
 	s.views.render(HOMEPAGE, "table", http.StatusOK, w, sublicenses)
 }
@@ -61,7 +61,7 @@ func (s *APIServer) delete(w http.ResponseWriter, r *http.Request) {
 	}
 	err = s.db.DeleteSublicenseById(id)
 	if err != nil {
-		InvaildRequest(w, r, fmt.Sprintf("Error Deleting: %s", err))
+		InvaildRequest(w, fmt.Sprintf("Error Deleting: %s", err))
 	}
 }
 
@@ -73,7 +73,7 @@ func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
 	}
 	license, err := s.db.GetSublicense(id)
 	if err != nil {
-		InvaildRequest(w, r, fmt.Sprintf("Getting the sublicense: %s", err))
+		InvaildRequest(w, fmt.Sprintf("Getting the sublicense: %s", err))
 		return
 	}
 	scrnData := SublicenseScreen{
@@ -99,27 +99,27 @@ func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	fname := r.FormValue("fname")
 	if len(fname) > 255 || len(fname) == 0 {
-		InvaildRequest(w, r, "Name to long or empty")
+		InvaildRequest(w, "Name to long or empty")
 		return
 	}
 	seats := r.FormValue("fnumberOfSeats")
 	if len(seats) == 0 {
-		InvaildRequest(w, r, "Number of Seats empty")
+		InvaildRequest(w, "Number of Seats empty")
 		return
 	}
 	numberofseats, err := strconv.Atoi(seats)
 	if err != nil && numberofseats > 0 {
-		InvaildRequest(w, r, "Number of Seats")
+		InvaildRequest(w, "Number of Seats")
 		return
 	}
 	key := LicenseKey(r.FormValue("fLicenseKey"))
 	if !key.valid() {
-		InvaildRequest(w, r, "License Key invalid")
+		InvaildRequest(w, "License Key invalid")
 		return
 	}
 	date, err := HTMLDateStringToUnixtime(r.FormValue("fExpiryDate"))
 	if err != nil {
-		InvaildRequest(w, r, "Expiry Date")
+		InvaildRequest(w, "Expiry Date")
 		return
 	}
 	expiryDate := UnixtimeToHTMLDateString(date)
@@ -137,7 +137,7 @@ func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
 	}
 	err = s.db.UpdateSublicense(lic)
 	if err != nil {
-		InvaildRequest(w, r, fmt.Sprintf("writing to DB: %s", err))
+		InvaildRequest(w, fmt.Sprintf("writing to DB: %s", err))
 		return
 	}
 }
@@ -145,27 +145,27 @@ func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
 	fname := r.FormValue("fname")
 	if len(fname) > 255 || len(fname) == 0 {
-		InvaildRequest(w, r, "Name to long or empty")
+		InvaildRequest(w, "Name to long or empty")
 		return
 	}
 	seats := r.FormValue("fnumberOfSeats")
 	if len(seats) == 0 {
-		InvaildRequest(w, r, "Number of Seats empty")
+		InvaildRequest(w, "Number of Seats empty")
 		return
 	}
 	numberofseats, err := strconv.Atoi(seats)
 	if err != nil && numberofseats > 0 {
-		InvaildRequest(w, r, "Number of Seats")
+		InvaildRequest(w, "Number of Seats")
 		return
 	}
 	key := LicenseKey(r.FormValue("fLicenseKey"))
 	if !key.valid() {
-		InvaildRequest(w, r, "License Key invalid")
+		InvaildRequest(w, "License Key invalid")
 		return
 	}
 	date, err := HTMLDateStringToUnixtime(r.FormValue("fExpiryDate"))
 	if err != nil {
-		InvaildRequest(w, r, "Expiry Date")
+		InvaildRequest(w, "Expiry Date")
 		return
 	}
 	expiryDate := UnixtimeToHTMLDateString(date)
@@ -183,7 +183,7 @@ func (s *APIServer) saveCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err = s.db.CreateSublicense(&lic); err != nil {
 		log.Println(err)
-		InvaildRequest(w, r, "Saving Failed")
+		InvaildRequest(w, "Saving Failed")
 		return
 	}
 }
@@ -220,6 +220,10 @@ func loadTemplates() Views {
 	}
 }
 
-func InvaildRequest(w http.ResponseWriter, r *http.Request, extraInfo string) {
+func InvaildRequest(w http.ResponseWriter, extraInfo string) {
 	http.Error(w, fmt.Sprintf("Error: %s", extraInfo), http.StatusBadRequest)
+}
+
+func InternalError(w http.ResponseWriter, extraInfo string) {
+	http.Error(w, fmt.Sprintf("Error: %s", extraInfo), http.StatusInternalServerError)
 }

@@ -8,13 +8,15 @@ import (
 )
 
 type Storage interface {
-	scanIntoSublicenses(*sql.Rows) (*Sublicense, error)
 	GetAllSublicenses() ([]*Sublicense, error)
 	GetAllActivSublicenses() ([]*Sublicense, error)
 	GetSublicense(id int) (*Sublicense, error)
 	CreateSublicense(lic *Sublicense) error
-	DeleteSublicense(lic *Sublicense) error
+	DeleteSublicenseById(id int) error
 	UpdateSublicense(lic *Sublicense) error
+	convertFromDBRepresentation(lic *SublicenseDB) *Sublicense
+	convertToDBRepresentation(lic *Sublicense) (*SublicenseDB, error)
+	scanIntoSublicense(rows *sql.Rows) (*SublicenseDB, error)
 }
 
 type sqliteStore struct {
@@ -186,6 +188,7 @@ func (s *sqliteStore) convertFromDBRepresentation(lic *SublicenseDB) *Sublicense
 		DeleteLink:    fmt.Sprintf("/delete/%d", lic.Id),
 	}
 }
+
 func (s *sqliteStore) convertToDBRepresentation(lic *Sublicense) (*SublicenseDB, error) {
 	date, err := HTMLDateStringToUnixtime(lic.ExpiryDate)
 	if err != nil {

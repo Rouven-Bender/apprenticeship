@@ -7,7 +7,7 @@ This program uses subcommands for the features:
     - "serve" - runs the server
     - "export" - runs the export
 # Dependencies
-- htmx @ 2.0.2 in the folder static as "htmx.min.js" (not vendor'd into the repo)
+- htmx @ 2.0.2 in the folder static as "htmx-2.0.2.min.js" (not vendor'd into the repo)
 - github.com/mattn/go-sqlite3
     - needs gcc
 - back button icon as svg as ./static/arrow-left.svg
@@ -38,13 +38,8 @@ The servers config accepts to import json as part of the config so I need to exp
 - Search for Customer or License Key
 - Adjust Number of Seats
 - Create and Deactivate licenses manually
-- Have a counter that shows total reserved seats out of total seats in the OEM License (if the oem license isn't infinite) then just a running counter
-- Check before exporting if the file was manually changed and make a warning
 # The Gameplan
 - Write a Golang server that does these three things:
     - Run the backend for the htmx frontend
     - Run an export of the database and write it to disk (used for the cronjob)
-    - Add an user with its credentials to the login
-- have a bash script (cronjob) that runs a query on the database to set sublicenses as deactivated when they expire and after that query finishes re-export the database state to the config
-(maybe have the query also as part of the 2. subcommand and just have cron run that secound sub command)
 - Use SQLite as the database because this is would be internal software that has barely any concurrent users

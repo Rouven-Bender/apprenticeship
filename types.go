@@ -33,7 +33,7 @@ type SublicenseScreen struct {
 
 type APIServer struct {
 	listenAddr string
-	db         sqliteStore
+	db         Storage
 	views      Views
 }
 
