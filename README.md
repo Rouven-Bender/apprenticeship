@@ -43,3 +43,5 @@ The servers config accepts to import json as part of the config so I need to exp
     - Run the backend for the htmx frontend
     - Run an export of the database and write it to disk (used for the cronjob)
 - Use SQLite as the database because this is would be internal software that has barely any concurrent users
+# Things to add that are part of the feature set but haven't done yet
+- Login and Auth - plan: wrap the endpoints that need JWT Key in a middleware that checks for valid key, have Login give the browser an jwt key into the cookies that has an expiry date
