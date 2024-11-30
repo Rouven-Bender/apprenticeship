@@ -1,0 +1,51 @@
+{{ block "index" .}}
+<html>
+	<head>
+		<title></title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="{{ .StyleIndex }}" rel="stylesheet">
+		<script src="{{ .FilterIndexTable }}"></script>
+		<script src="{{ .Htmx }}"></script>
+	</head>
+	<body>
+		<div id="header">
+			<input id="search" onkeyup="filter()" type="search" placeholder="Search">
+			<label id="onlyActivLabel" for="onlyActiv">only activ</label>
+			<input id="onlyActiv" type="checkbox" onchange="filter()" name="onlyActiv">
+			<button onclick="location.href = '/create'" id="createNew">Create New</button>
+			<button id="logout" type="button">Logout</button>
+		</div>
+		<div id="content" hx-get="/table" hx-swap="outerHTML" hx-trigger="load">
+		</div>
+	</body>
+</html>
+{{ end }}
+{{ block "table" .}}
+<div id="content">
+	<table id="data-table">
+		<tr>
+			<th>Id</th>
+			<th>Name</th>
+			<th>Number of Seats</th>
+			<th>License Key</th>
+			<th>Expiry Date</th>
+			<th>Activ</th>
+			<th>Edit Button</th>
+			<th>Delete</th>
+		</tr>
+	{{ range .}}
+		<tr id="tr_{{.Id}}">
+		<td>{{ .Id }}</td>
+		<td>{{ .Name }}</td>
+		<td>{{ .NumberOfSeats }}</td>
+		<td>{{ .LicenseKey }}</td>
+		<td>{{ .ExpiryDate }}</td>
+		<td>{{ .Activ }}</td>
+		<td><button onclick="location.href = {{.EditLink}}">Edit</button></td>
+			<td><button hx-target="#tr_{{.Id}}" hx-swap="outerHTML" hx-delete="{{.DeleteLink}}">Delete</button></td>
+		</tr>
+	{{ end }}
+	</table>
+</div>
+{{ end }}

@@ -1,0 +1,17 @@
+#login-form {
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	row-gap: 5px;
+	outline: 2px solid black;
+	outline-offset: 15px;
+	flex-basis: fit-content;
+	height: max-content;
+	width: fit-content;
+}
+.center {
+	top: 50%;
+	left: 50%;
+	margin-top: -7%;
+	margin-left: -7%;
+}

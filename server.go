@@ -41,7 +41,7 @@ func (s *APIServer) Run() {
 	mux.Handle("DELETE /delete/{id}", s.requiresAuthToken(s.delete))
 	mux.Handle("GET /create", s.requiresAuthToken(s.create))
 	mux.Handle("POST /create", s.requiresAuthToken(s.saveCreate))
-	mux.Handle("GET /", s.requiresAuthToken(s.homepage))
+	mux.Handle("GET /home", s.requiresAuthToken(s.homepage))
 
 	mux.Handle("GET /cdn/{filename}", http.StripPrefix("/cdn/", fs))
 	mux.HandleFunc("GET /login", s.login)

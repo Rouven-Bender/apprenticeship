@@ -1,0 +1,21 @@
+{{ block "login" . }}
+<html>
+	<head>
+		<title></title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="/cdn/htmx-2.0.2.min.js"></script>
+		<script src="/cdn/login-onSuccess-redirect.js"></script>
+		<link href="/cdn/style-login.css" rel="stylesheet">
+	</head>
+	<body>
+		<form id="login-form" class="center">
+			<label for="username">Username</label>
+			<input type="text" name="username">
+			<label for="password">Password</label>
+			<input type="password" name="password">
+			<input type="submit" value="Send" id="send" hx-post="/login">
+		</form>
+	</body>
+</html>
+{{ end }}

@@ -4,10 +4,9 @@ const changeErrorMessage = event => {
 
 const redirectHomepage = event => {
 	var sendbtn = document.getElementById("send")
-	console.log("send request")
 	if (event.detail.target == sendbtn){
 		if (event.detail.successful) {
-			window.location.replace("/")
+			window.location.replace("/home")
 		}
 	}
 }
