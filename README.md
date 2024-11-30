@@ -11,6 +11,7 @@ This program uses subcommands for the features:
 - github.com/mattn/go-sqlite3
     - needs gcc
 - back button icon as svg as ./static/arrow-left.svg
+- an "JWT_SECRET" file in the project folder with an string that is at least 32 chars long
 # The Project
 The License Server has a feature to register sublicenses (with limited number of seats) of a bigger License(maybe limited in total number of seats).
 But to configure that sublicense to be accepted by the big central License Server it needs to be written to that servers config

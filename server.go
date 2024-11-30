@@ -8,7 +8,16 @@ import (
 	"net/http/httputil"
 	"strconv"
 	"strings"
+	"time"
+
+	_ "embed"
+
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
+
+//go:embed JWT_SECRET
+var JWT_SECRET []byte
 
 func (v *Views) render(p page, block string, status int, w http.ResponseWriter, d interface{}) error {
 	w.WriteHeader(status)
@@ -26,14 +35,17 @@ func NewAPIServer(listenAddr string, database *sqliteStore) *APIServer {
 func (s *APIServer) Run() {
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
+	mux.Handle("GET /table", s.requiresAuthToken(s.table))
+	mux.Handle("GET /edit/{id}", s.requiresAuthToken(s.edit))
+	mux.Handle("PATCH /edit/{id}", s.requiresAuthToken(s.saveEdit))
+	mux.Handle("DELETE /delete/{id}", s.requiresAuthToken(s.delete))
+	mux.Handle("GET /create", s.requiresAuthToken(s.create))
+	mux.Handle("POST /create", s.requiresAuthToken(s.saveCreate))
+	mux.Handle("GET /", s.requiresAuthToken(s.homepage))
+
 	mux.Handle("GET /cdn/{filename}", http.StripPrefix("/cdn/", fs))
-	mux.Handle("GET /api/html/table", makeHTTPHandleFunc(s.table))
-	mux.Handle("GET /edit/{id}", makeHTTPHandleFunc(s.edit))
-	mux.Handle("PATCH /edit/{id}", makeHTTPHandleFunc(s.saveEdit))
-	mux.Handle("DELETE /delete/{id}", makeHTTPHandleFunc(s.delete))
-	mux.Handle("GET /create", makeHTTPHandleFunc(s.create))
-	mux.Handle("POST /create", makeHTTPHandleFunc(s.saveCreate))
-	mux.Handle("GET /", makeHTTPHandleFunc(s.homepage))
+	mux.HandleFunc("GET /login", s.login)
+	mux.HandleFunc("POST /login", s.verifyCredentials)
 	//mux.Handle("GET /cdn/{filename}", makeHTTPHandleFunc(s.debugHandler))
 
 	err := http.ListenAndServe(s.listenAddr, mux)
@@ -43,7 +55,44 @@ func (s *APIServer) Run() {
 }
 
 func (s *APIServer) homepage(w http.ResponseWriter, r *http.Request) {
-	s.views.render(HOMEPAGE, "index", http.StatusOK, w, ALIAS)
+	if err := s.views.render(HOMEPAGE, "index", http.StatusOK, w, ALIAS); err != nil {
+		log.Println(err)
+	}
+}
+
+func (s *APIServer) verifyCredentials(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	pwd := r.FormValue("password")
+	dbHash, _ := s.db.GetHashForUser(username)
+	result := bcrypt.CompareHashAndPassword(dbHash, []byte(pwd))
+	if result == nil {
+		claims := &jwt.RegisteredClaims{
+			ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 2)},
+			Issuer:    "abschlussprojekt",
+			Subject:   username,
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		tokenString, err := token.SignedString(JWT_SECRET)
+		if err != nil {
+			InternalError(w, fmt.Sprintf("Signing Token: %s", err))
+			return
+		}
+		cookie := http.Cookie{
+			Name:    "authToken",
+			Value:   tokenString,
+			Quoted:  false,
+			Expires: time.Now().Add(time.Hour * 2),
+		}
+		if err := cookie.Valid(); err != nil {
+			log.Println(err)
+		}
+		http.SetCookie(w, &cookie)
+		return
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte{})
+		return
+	}
 }
 
 func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +100,9 @@ func (s *APIServer) table(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		InternalError(w, "Getting sublicenses failed")
 	}
-	s.views.render(HOMEPAGE, "table", http.StatusOK, w, sublicenses)
+	if err := s.views.render(HOMEPAGE, "table", http.StatusOK, w, sublicenses); err != nil {
+		log.Println(err)
+	}
 }
 
 func (s *APIServer) delete(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +113,12 @@ func (s *APIServer) delete(w http.ResponseWriter, r *http.Request) {
 	err = s.db.DeleteSublicenseById(id)
 	if err != nil {
 		InvaildRequest(w, fmt.Sprintf("Error Deleting: %s", err))
+	}
+}
+
+func (s *APIServer) login(w http.ResponseWriter, r *http.Request) {
+	if err := s.views.render(LOGIN, "login", http.StatusOK, w, 0); err != nil {
+		log.Println(err)
 	}
 }
 
@@ -80,7 +137,9 @@ func (s *APIServer) edit(w http.ResponseWriter, r *http.Request) {
 		Alias: ALIAS,
 		Data:  *license,
 	}
-	s.views.render(SUBLICENSE, "sublicense-edit", http.StatusOK, w, scrnData)
+	if err := s.views.render(SUBLICENSE, "sublicense-edit", http.StatusOK, w, scrnData); err != nil {
+		log.Println(err)
+	}
 }
 
 func (s *APIServer) create(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +147,9 @@ func (s *APIServer) create(w http.ResponseWriter, r *http.Request) {
 		Alias: ALIAS,
 		Data:  Sublicense{},
 	}
-	s.views.render(SUBLICENSE, "sublicense-create", http.StatusOK, w, scrnData)
+	if err := s.views.render(SUBLICENSE, "sublicense-create", http.StatusOK, w, scrnData); err != nil {
+		log.Println(err)
+	}
 }
 
 func (s *APIServer) saveEdit(w http.ResponseWriter, r *http.Request) {
@@ -202,11 +263,35 @@ func makeHTTPHandleFunc(f apiFunc) http.HandlerFunc {
 	}
 }
 
+func (s *APIServer) requiresAuthToken(f apiFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("authToken")
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		token, err := validateJWT(cookie.Value)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		if !token.Valid {
+			log.Println(err)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		f(w, r)
+	}
+}
+
 func loadTemplates() Views {
 	var out []*template.Template
 	var fileList []string = []string{
-		"views/index.html",
-		"views/sublicense.html",
+		"views/index.tmpl",
+		"views/sublicense.tmpl",
+		"views/login.tmpl",
 	}
 	for _, fileName := range fileList {
 		tmpl, err := template.ParseFiles(fileName)
@@ -226,4 +311,15 @@ func InvaildRequest(w http.ResponseWriter, extraInfo string) {
 
 func InternalError(w http.ResponseWriter, extraInfo string) {
 	http.Error(w, fmt.Sprintf("Error: %s", extraInfo), http.StatusInternalServerError)
+}
+
+func validateJWT(tokenString string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if token.Method.Alg() == "HS256" {
+			if issuer, err := token.Claims.GetIssuer(); err == nil && issuer == "abschlussprojekt" {
+				return JWT_SECRET, nil
+			}
+		}
+		return nil, fmt.Errorf("Couldn't Parse Token")
+	})
 }

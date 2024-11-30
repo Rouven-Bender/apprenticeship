@@ -11,7 +11,9 @@ type Storage interface {
 	GetAllSublicenses() ([]*Sublicense, error)
 	GetAllActivSublicenses() ([]*Sublicense, error)
 	GetSublicense(id int) (*Sublicense, error)
+	GetHashForUser(username string) ([]byte, error)
 	CreateSublicense(lic *Sublicense) error
+	CreateLoginCredentials(username string, password []byte) error
 	DeleteSublicenseById(id int) error
 	UpdateSublicense(lic *Sublicense) error
 	convertFromDBRepresentation(lic *SublicenseDB) *Sublicense
@@ -34,6 +36,49 @@ func NewSqliteStore() (*sqliteStore, error) {
 	return &sqliteStore{
 		db: db,
 	}, nil
+}
+
+func (s *sqliteStore) GetHashForUser(username string) ([]byte, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return []byte{0}, err
+	}
+	defer tx.Commit()
+	query := `select * from login_cred where username = ?`
+	row, err := tx.Query(query, username)
+	if err != nil {
+		return []byte{0}, err
+	}
+	user := struct {
+		username string
+		pwd_hash []byte
+	}{}
+	for row.Next() {
+		row.Scan(
+			&user.username,
+			&user.pwd_hash,
+		)
+		return user.pwd_hash, nil
+	}
+	return []byte{0}, fmt.Errorf("Didn't find the user")
+}
+
+func (s *sqliteStore) CreateLoginCredentials(username string, password []byte) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Commit()
+	query := `insert into login_cred (username, pwd_hash) values (?, ?)`
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(username, password)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *sqliteStore) GetSublicense(id int) (*Sublicense, error) {

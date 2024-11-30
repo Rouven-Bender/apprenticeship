@@ -1,10 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -18,6 +23,9 @@ func main() {
 			break
 		case "export":
 			runExport()
+			break
+		case "addUser":
+			addUser()
 			break
 		default:
 			log.Println("unknown subcommand")
@@ -48,4 +56,32 @@ func runExport() {
 		log.Println(err)
 	}
 	fmt.Printf("%s", string(j))
+}
+
+func addUser() {
+	fs := flag.NewFlagSet("addUser", flag.ExitOnError)
+	var username = fs.String("u", "", "Username to be added")
+
+	fs.Parse(os.Args[2:])
+
+	fmt.Println("Enter the Password the User should have")
+	reader := bufio.NewReader(os.Stdin)
+	pwd, err := reader.ReadString('\n')
+	pwd = strings.TrimSuffix(pwd, "\n")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), 10)
+	if err != nil {
+		log.Panic(err)
+	}
+	store, err := NewSqliteStore()
+	if err != nil {
+		log.Panic(err)
+	}
+	err = store.CreateLoginCredentials(*username, hash)
+	if err != nil {
+		log.Panic(err)
+	}
 }

@@ -48,6 +48,7 @@ type page int
 const (
 	HOMEPAGE   page = 0
 	SUBLICENSE page = 1
+	LOGIN      page = 2
 )
 
 type LicenseKey string

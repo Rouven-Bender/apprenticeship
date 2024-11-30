@@ -3,3 +3,4 @@ abschlussprojekt-apprentice
 *.db
 *.svg
 leftof
+JWT_SECRET
