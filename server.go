@@ -44,6 +44,7 @@ func (s *APIServer) Run() {
 	mux.Handle("GET /home", s.requiresAuthToken(s.homepage))
 
 	mux.Handle("GET /cdn/{filename}", http.StripPrefix("/cdn/", fs))
+	mux.HandleFunc("GET /", s.index)
 	mux.HandleFunc("GET /login", s.login)
 	mux.HandleFunc("POST /login", s.verifyCredentials)
 	//mux.Handle("GET /cdn/{filename}", makeHTTPHandleFunc(s.debugHandler))
@@ -57,6 +58,16 @@ func (s *APIServer) Run() {
 func (s *APIServer) homepage(w http.ResponseWriter, r *http.Request) {
 	if err := s.views.render(HOMEPAGE, "index", http.StatusOK, w, ALIAS); err != nil {
 		log.Println(err)
+	}
+}
+
+func (s *APIServer) index(w http.ResponseWriter, r *http.Request) {
+	if _, err := r.Cookie("authToken"); err != nil {
+		s.login(w, r)
+		return
+	} else {
+		s.homepage(w, r)
+		return
 	}
 }
 
