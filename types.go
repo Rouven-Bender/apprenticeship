@@ -34,16 +34,16 @@ type SublicenseScreen struct {
 type APIServer struct {
 	listenAddr string
 	db         Storage
-	views      Views
+	views      *Views
 }
 
 type apiFunc func(http.ResponseWriter, *http.Request)
 
-type Views struct {
-	pages []*template.Template
-}
-
 type page int
+
+type Views struct {
+	views []*template.Template
+}
 
 const (
 	HOMEPAGE   page = 0

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"log"
@@ -19,9 +20,13 @@ import (
 //go:embed JWT_SECRET
 var JWT_SECRET []byte
 
-func (v *Views) render(p page, block string, status int, w http.ResponseWriter, d interface{}) error {
-	w.WriteHeader(status)
-	return v.pages[p].ExecuteTemplate(w, block, d)
+//go:embed views/*.tmpl
+var TEMPLATE_FS embed.FS
+
+func (v *Views) render(p page, block string, statusCode int, w http.ResponseWriter, data any) error {
+	w.WriteHeader(statusCode)
+	v.views[p].ExecuteTemplate(w, block, data)
+	return nil
 }
 
 func NewAPIServer(listenAddr string, database *sqliteStore) *APIServer {
@@ -297,22 +302,22 @@ func (s *APIServer) requiresAuthToken(f apiFunc) http.HandlerFunc {
 	}
 }
 
-func loadTemplates() Views {
+func loadTemplates() *Views {
 	var out []*template.Template
 	var fileList []string = []string{
 		"views/index.tmpl",
 		"views/sublicense.tmpl",
 		"views/login.tmpl",
 	}
-	for _, fileName := range fileList {
-		tmpl, err := template.ParseFiles(fileName)
+	for _, filename := range fileList {
+		tmp, err := template.ParseFS(TEMPLATE_FS, filename)
 		if err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
-		out = append(out, tmpl)
+		out = append(out, tmp)
 	}
-	return Views{
-		pages: out,
+	return &Views{
+		views: out,
 	}
 }
 
