@@ -19,7 +19,7 @@ But to configure that sublicense to be accepted by the License Server it needs t
 The servers config accepts to import json as part of the config so I need to export a JSON file containing all sublicenses that need to be activ
 # JSON Schema
 (not how its actually on that license server but how I'm gonna export it in this rewrite)
-´´´
+```
 {
     "sublicense": [
         {
@@ -34,7 +34,7 @@ The servers config accepts to import json as part of the config so I need to exp
         }
     ]
 }
-´´´
+```
 # Features
 - removing expired licenses from file automaticly
 - Search for Customer or License Key
