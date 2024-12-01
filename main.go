@@ -27,6 +27,9 @@ func main() {
 		case "addUser":
 			addUser()
 			break
+		case "deactivateExpired":
+			deactivateExpiredEntries()
+			break
 		default:
 			log.Println("unknown subcommand")
 		}
@@ -56,6 +59,16 @@ func runExport() {
 		log.Println(err)
 	}
 	fmt.Printf("%s", string(j))
+}
+
+func deactivateExpiredEntries() {
+	store, err := NewSqliteStore()
+	if err != nil {
+		panic(err)
+	}
+	if err := store.DeactivateExpiredLicenses(); err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func addUser() {

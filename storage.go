@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,6 +17,8 @@ type Storage interface {
 	CreateLoginCredentials(username string, password []byte) error
 	DeleteSublicenseById(id int) error
 	UpdateSublicense(lic *Sublicense) error
+	DeactivateExpiredLicenses() error
+
 	convertFromDBRepresentation(lic *SublicenseDB) *Sublicense
 	convertToDBRepresentation(lic *Sublicense) (*SublicenseDB, error)
 	scanIntoSublicense(rows *sql.Rows) (*SublicenseDB, error)
@@ -47,6 +50,7 @@ func (s *sqliteStore) GetHashForUser(username string) ([]byte, error) {
 	query := `select * from login_cred where username = ?`
 	row, err := tx.Query(query, username)
 	if err != nil {
+		tx.Rollback()
 		return []byte{0}, err
 	}
 	user := struct {
@@ -72,10 +76,12 @@ func (s *sqliteStore) CreateLoginCredentials(username string, password []byte) e
 	query := `insert into login_cred (username, pwd_hash) values (?, ?)`
 	stmt, err := tx.Prepare(query)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	_, err = stmt.Exec(username, password)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	return nil
@@ -90,11 +96,13 @@ func (s *sqliteStore) GetSublicense(id int) (*Sublicense, error) {
 	query := `select * from sublicenses where id = ?`
 	rows, err := tx.Query(query, id)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 	if rows.Next() {
 		lic, err := s.scanIntoSublicense(rows)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 		return s.convertFromDBRepresentation(lic), nil
@@ -111,12 +119,14 @@ func (s *sqliteStore) GetAllSublicenses() ([]*Sublicense, error) {
 	query := "select * from sublicenses"
 	rows, err := tx.Query(query)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 	slics := []*Sublicense{}
 	for rows.Next() {
 		lic, err := s.scanIntoSublicense(rows)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 		clic := s.convertFromDBRepresentation(lic)
@@ -134,12 +144,14 @@ func (s *sqliteStore) GetAllActivSublicenses() ([]*Sublicense, error) {
 	query := "select * from sublicenses where activ=true"
 	rows, err := tx.Query(query)
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 	slics := []*Sublicense{}
 	for rows.Next() {
 		lic, err := s.scanIntoSublicense(rows)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 		clic := s.convertFromDBRepresentation(lic)
@@ -163,11 +175,13 @@ func (s *sqliteStore) CreateSublicense(lic *Sublicense) error {
 	values (?, ?, ?, ?, ?)`
 	stmt, err := tx.Prepare(query)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(clic.Name, clic.NumberOfSeats, clic.LicenseKey, clic.ExpiryDate, clic.Activ)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	return nil
@@ -182,11 +196,13 @@ func (s *sqliteStore) DeleteSublicenseById(id int) error {
 	query := `delete from sublicenses where id=?`
 	stmt, err := tx.Prepare(query)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(id)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	return nil
@@ -211,11 +227,36 @@ func (s *sqliteStore) UpdateSublicense(lic *Sublicense) error {
 	where id = ? `
 	stmt, err := tx.Prepare(query)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(clic.Name, clic.NumberOfSeats, clic.LicenseKey, clic.ExpiryDate, clic.Activ, clic.Id)
 	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
+}
+
+func (s *sqliteStore) DeactivateExpiredLicenses() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Commit()
+	query := `update sublicenses set
+		activ = 0
+	where expiryDate < ? `
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(time.Now().Unix())
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	return nil

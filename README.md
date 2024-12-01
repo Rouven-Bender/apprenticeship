@@ -6,6 +6,7 @@ This program uses subcommands for the features:
 - "serve" - runs the server
 - "export" - runs the export
 - "addUser" - this will take a -u {username} and ask for a password and add those credentials
+- "deactivateExpired" - this will set all licenses with an expiry date past the current time as inactiv
 # Dependencies
 - htmx @ 2.0.2 in the folder static as "htmx-2.0.2.min.js" (not vendored into the repo)
 - github.com/mattn/go-sqlite3
